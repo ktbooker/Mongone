@@ -27,9 +27,9 @@ def get_args():
     """Parse command-line arguments for database and collection names."""
     parser = argparse.ArgumentParser(description="Script to parse database and collection names.")
 
-    parser.add_argument("--conn_str", required=True, help="Mongo connection string.", default="mongodb://localhost:27017")
-    parser.add_argument("--db", required=True, help="Name of the database.", default="testDB")
-    parser.add_argument("--collection", required=True, help="Name of the collection.", default="users")
+    parser.add_argument("--conn_str", required=False, help="Mongo connection string.", default="mongodb://localhost:27017")
+    parser.add_argument("--db", required=False, help="Name of the database.", default="testDB")
+    parser.add_argument("--collection", required=False, help="Name of the collection.", default="users")
 
     return parser.parse_args()
 

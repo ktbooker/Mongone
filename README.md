@@ -4,6 +4,23 @@ WomboDB for TartanHacks2025
 
 WomboDB is a ETL program for migrating away from MongoDB to a true red-blooded relation database of your choice.
 
+## Entrypoint
+
+After doing all the setup described in the `Installation` section, the ETL program can be run with the command:
+
+```sh
+usage: main.py [-h] [--conn_str CONN_STR] [--db DB] [--collection COLLECTION]
+
+Script to parse database and collection names.
+
+options:
+  -h, --help            show this help message and exit
+  --conn_str CONN_STR   Mongo connection string.
+  --db DB               Name of the database.
+  --collection COLLECTION
+                        Name of the collection.
+```
+
 ## Installation (macOS)
 
 ### Install MongoDB
@@ -37,4 +54,14 @@ WomboDB/utils/ $ node generate_test_data.js
 
 ```sh
 WomboDB/ $ ./scripts/load_data.sh
+```
+
+## Python Setup
+
+All from the `WomboDB/` directory
+
+```sh
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
 ```

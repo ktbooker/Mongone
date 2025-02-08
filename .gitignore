@@ -1,2 +1,4 @@
 data/
 largeDataset.json
+__pycache__/
+.venv/
