@@ -180,7 +180,7 @@ def flatten_nested_json(doc, parent_key=''):
 
 # Takes a csv as a string array and emits it to the file at file name.
 def emit_csv(csv_array, filename):
-    csv.writer(open(filename.name, 'w', newline=''), delimiter='|').writerows(csv_array)
+    csv.writer(open(filename.name, 'w', newline='\n'), delimiter='|').writerows(csv_array)
 
 
 
@@ -200,7 +200,7 @@ def emit_duckdb(field_names_to_types, flattened_coll, args):
                 return "TIMESTAMP"
 
     def convert_schema_to_duckdb(schema: dict) -> dict:
-        return {key : type_to_duckdb(value) for key, value in schema.items()}
+        return {key : type_to_duckdb(value) for key, value in sorted(schema.items())}
 
     '''
     Given a document {"field name": "value"} and 
@@ -210,18 +210,17 @@ def emit_duckdb(field_names_to_types, flattened_coll, args):
     '''
     def convert_row(row1, schema) -> list:
         row_items = []
-        for field, value in row1.items():
-            if field not in schema.keys():
-                row_items.append("NULL")
+        for field in schema.keys():
+            if field in row1.keys():
+                row_items.append(row1[field])
             else:
-                row_items.append(value)
+                row_items.append("NULL")
         return row_items
 
 
     preemit_csv = []
 
     duckdb_schema = convert_schema_to_duckdb(field_names_to_types)
-    # Bad style! See Course Staff!
     preemit_csv.append(duckdb_schema.keys())
     for row in flattened_coll:
         preemit_csv.append(convert_row(row, duckdb_schema))
@@ -231,9 +230,8 @@ def emit_duckdb(field_names_to_types, flattened_coll, args):
         emit_csv(preemit_csv, output_file)
         # TODO: Make duckdb import the csv data.
         conn = duckdb.connect(database=f"{args.db}.duckdb")
-        conn.sql(f"CREATE TABLE {args.collection} AS FROM read_csv('{output_file.name}', delim = '|', header = true);")
+        conn.sql(f"CREATE TABLE {args.collection} AS FROM read_csv('{output_file.name}', delim='|', header=true, null_padding=true);")
         data = conn.sql(f"SELECT * FROM '{args.collection}';").fetchall()
-        print(duckdb.__version__)
         conn.close()
 
 
