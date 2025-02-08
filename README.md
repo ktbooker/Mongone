@@ -1,8 +1,8 @@
-# WomboDB
+# Mongone
 
-WomboDB for TartanHacks2025
+Mongone for TartanHacks2025
 
-WomboDB is a ETL program for migrating away from MongoDB to a true red-blooded relation database of your choice.
+Mongone is a ETL program for migrating away from MongoDB to a true red-blooded relation database of your choice.
 
 ## Entrypoint
 
@@ -46,19 +46,19 @@ mongosh
 ## Generating Sample Data
 
 ```sh
-WomboDB/       $ cd utils
-WomboDB/utils/ $ node generate_test_data.js
+Mongone/       $ cd utils
+Mongone/utils/ $ node generate_test_data.js
 ```
 
 ## Load the data into Mongo
 
 ```sh
-WomboDB/ $ ./scripts/load_data.sh
+Mongone/ $ ./scripts/load_data.sh
 ```
 
 ## Python Setup
 
-All from the `WomboDB/` directory
+All from the `Mongone/` directory
 
 ```sh
 python3 -m venv .venv
