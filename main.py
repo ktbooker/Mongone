@@ -192,10 +192,12 @@ def emit_duckdb(field_names_to_types, flattened_coll, args):
             for field, value in doc.items():
                 if isinstance(value, str):
                     parsed_value = try_parse_list(value)
-                    if parsed_value is not None:
+                    if parsed_value is not None: # if it's a list
                         possible_list[field] &= True
-                        for item in parsed_value:
+                        for i, item in enumerate(parsed_value):
                             field_array_types[field].add(type(item).__name__)
+                            parsed_value[i] = str(item) # convert each item in the list to a string
+                        doc[field] = parsed_value # update this doc in flattened_col to make all elements a string
                     else:
                         possible_list[field] = False
                 else:
@@ -220,7 +222,7 @@ def emit_duckdb(field_names_to_types, flattened_coll, args):
                     else:
                         field_names_to_types[field] = "LIST<STRING>"
 
-        return field_names_to_types
+        return field_names_to_types, flattened_coll
 
     def type_to_duckdb(tau):
         match tau.split():
@@ -259,7 +261,7 @@ def emit_duckdb(field_names_to_types, flattened_coll, args):
 
     preemit_csv = []
 
-    field_names_to_types = add_list_type(field_names_to_types, flattened_coll)
+    field_names_to_types, flattened_coll = add_list_type(field_names_to_types, flattened_coll)
     duckdb_schema = convert_schema_to_duckdb(field_names_to_types)
     # Bad style! See Course Staff!
     preemit_csv.append(duckdb_schema.keys())
