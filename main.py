@@ -17,6 +17,7 @@ import tempfile
 import csv
 from collections import defaultdict
 from datetime import datetime
+from pymongo import MongoClient
 
 import art
 import download_client
@@ -30,6 +31,7 @@ def get_args():
     parser.add_argument("--conn_str", required=False, help="Mongo connection string.", default="mongodb://localhost:27017")
     parser.add_argument("--db", required=False, help="Name of the database.", default="testDB")
     parser.add_argument("--collection", required=False, help="Name of the collection.", default="users")
+    parser.add_argument("--nuke", required=False, help="Nuke the collection", default=False, type=bool)
 
     return parser.parse_args()
 
@@ -54,6 +56,13 @@ def main():
 
     emit_duckdb(field_names_to_types, flattened_coll, args)
 
+    if args.nuke:
+        client = MongoClient(args.conn_str)
+        collection = client[args.db][args.collection]
+        result = collection.delete_many({})
+        print(f"Deleted {result.deleted_count} documents.")
+        client.close()
+        
     '''
     Let us now figure out the schema(s)!
     '''
