@@ -19,6 +19,7 @@ from collections import defaultdict
 from datetime import datetime
 
 import art
+import ast
 import download_client
 import duckdb
 from logger import logger
@@ -146,13 +147,21 @@ def is_datetime(value):
                 continue
     return False
 
+''' Parse a list back from a string'''
+def try_parse_list(value):
+    try:
+        parsed = ast.literal_eval(value)
+        if isinstance(parsed, list):
+            return parsed
+    except (ValueError, SyntaxError):
+        return None
+
 '''
 Given a document (JSON) flatten by bringing all nested fields to the top level
 returns: dict_items['str', value]
 '''
 def flatten_nested_json(doc, parent_key=''):
     flattened_doc = {}
-
     for key, value in doc.items():
         new_key = f"{parent_key}\\{key}" if parent_key else key
 
@@ -173,9 +182,45 @@ def flatten_nested_json(doc, parent_key=''):
 def emit_csv(csv_array, filename):
     csv.writer(open(filename.name, 'w', newline=''), delimiter='|').writerows(csv_array)
 
-
-
 def emit_duckdb(field_names_to_types, flattened_coll, args):
+
+    # DuckDB LIST<TYPE>
+    def add_list_type(field_names_to_types, flattened_coll):
+        possible_list = defaultdict(lambda: True)
+        field_array_types = defaultdict(set)
+        for doc in flattened_coll:
+            for field, value in doc.items():
+                if isinstance(value, str):
+                    parsed_value = try_parse_list(value)
+                    if parsed_value is not None:
+                        possible_list[field] &= True
+                        for item in parsed_value:
+                            field_array_types[field].add(type(item).__name__)
+                    else:
+                        possible_list[field] = False
+                else:
+                    possible_list[field] = False
+
+        # update if there are lists
+        for field, is_list_type in possible_list.items():
+            if is_list_type:
+                element_types = field_array_types[field]
+
+                if not element_types: #empty list is string
+                    field_names_to_types[field] = "LIST<STRING>"
+                elif len(element_types) == 1: #all elements in the array are the same type
+                    element_type = next(iter(element_types)).upper()
+                    if element_type in {"STRING", "FLOAT", "BOOL", "INT"}:
+                        field_names_to_types[field] = f"LIST<{element_type}>"
+                    else: #anything but a simple primitive is a string
+                        field_names_to_types[field] = "LIST<STRING>"
+                else: #only handle conflict resolution for floats and ints
+                    if {"int", "float"} == set(element_types):
+                        field_names_to_types[field] = "LIST<FLOAT>"
+                    else:
+                        field_names_to_types[field] = "LIST<STRING>"
+
+        return field_names_to_types
 
     def type_to_duckdb(tau):
         match tau.split():
@@ -189,6 +234,10 @@ def emit_duckdb(field_names_to_types, flattened_coll, args):
                 return "BOOLEAN"
             case["datetime"]:
                 return "TIMESTAMP"
+            case["LIST<STRING>"]:
+                return "LIST<VARCHAR>"
+            case _:
+                return tau
 
     def convert_schema_to_duckdb(schema: dict) -> dict:
         return {key : type_to_duckdb(value) for key, value in schema.items()}
@@ -208,9 +257,9 @@ def emit_duckdb(field_names_to_types, flattened_coll, args):
                 row_items.append(value)
         return row_items
 
-
     preemit_csv = []
 
+    field_names_to_types = add_list_type(field_names_to_types, flattened_coll)
     duckdb_schema = convert_schema_to_duckdb(field_names_to_types)
     # Bad style! See Course Staff!
     preemit_csv.append(duckdb_schema.keys())
