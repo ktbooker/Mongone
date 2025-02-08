@@ -25,3 +25,16 @@ mongod --dbpath ./data/db
 ```sh
 mongosh
 ```
+
+## Generating Sample Data
+
+```sh
+WomboDB/       $ cd utils
+WomboDB/utils/ $ node generate_test_data.js
+```
+
+## Load the data into Mongo
+
+```sh
+WomboDB/ $ ./scripts/load_data.sh
+```
